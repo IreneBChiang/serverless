@@ -1,0 +1,51 @@
+# .github/workflows/lambda-ci.yml
+name: lambda-deploy
+
+on:
+  push:
+    branches: [ main ]   # 你如果想用 dev branch 再改這裡
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 安裝依賴（requirements.txt 可以是空的）
+      - name: Install dependencies
+        run: |
+          mkdir -p build
+          pip install -r requirements.txt -t build
+
+      # 複製 lambda 原始碼
+      - name: Copy lambda source
+        run: |
+          cp -r lambda/* build/
+
+      # 打包 zip
+      - name: Create deployment package
+        run: |
+          cd build
+          zip -r ../lambda.zip .
+
+      # 設定 AWS（DEV 帳號）
+      - name: Configure AWS credentials (DEV)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 更新 Lambda function code
+      - name: Update Lambda function code
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --zip-file fileb://lambda.zip
