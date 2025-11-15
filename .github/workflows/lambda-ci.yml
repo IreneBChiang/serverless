@@ -3,7 +3,7 @@ name: lambda-deploy
 
 on:
   push:
-    branches: [ main ]   # 你如果想用 dev branch 再改這裡
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
@@ -18,24 +18,25 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 安裝依賴（requirements.txt 可以是空的）
+      # Install dependencies
       - name: Install dependencies
         run: |
           mkdir -p build
           pip install -r requirements.txt -t build
 
-      # 複製 lambda 原始碼
+      # Copy lambda source
       - name: Copy lambda source
         run: |
           cp -r lambda/* build/
 
-      # 打包 zip
+      # Package lambda.zip
       - name: Create deployment package
         run: |
           cd build
           zip -r ../lambda.zip .
 
-      # 設定 AWS（DEV 帳號）
+      # 部署 DEV
+
       - name: Configure AWS credentials (DEV)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -43,9 +44,23 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 更新 Lambda function code
-      - name: Update Lambda function code
+      - name: Update Lambda function code (DEV)
         run: |
           aws lambda update-function-code \
             --function-name "${{ secrets.LAMBDA_FUNCTION_NAME }}" \
+            --zip-file fileb://lambda.zip
+
+      # 部署 DEMO（用 demo 那組 GitHub secrets）
+
+      - name: Configure AWS credentials (DEMO)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEMO }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEMO }}
+          aws-region: ${{ secrets.AWS_REGION }}   # 或 AWS_REGION_DEMO（看你要不要分開）
+
+      - name: Update Lambda function code (DEMO)
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ secrets.LAMBDA_FUNCTION_NAME_DEMO }}" \
             --zip-file fileb://lambda.zip
