@@ -34,6 +34,12 @@ def _get_sendgrid_api_key() -> str:
       "SENDGRID_API_KEY": "SG.xxxxx..."
     }
     """
+    # 先看環境變數，有就直接用
+    direct = os.environ.get("SENDGRID_API_KEY")
+    if direct:
+        return direct
+
+    # 沒有才從 Secrets Manager 拿
     if not SENDGRID_SECRET_ARN:
         raise RuntimeError("SENDGRID_SECRET_ARN is not configured")
 
