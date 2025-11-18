@@ -108,7 +108,7 @@ def _send_verification_email(email: str, first_name: str, token: str):
 
     subject = "Verify your account"
     content = (
-        f"Hi {first_name},\n\n"
+        f"Hi assignment 09,\n\n"
         f"Please click the link below to verify your account:\n"
         f"{verify_link}\n\n"
         f"If you did not sign up, you can ignore this email."
